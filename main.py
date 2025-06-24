@@ -5,7 +5,7 @@ import pygame      # Para gráficos y animación
 import math        # Para funciones matemáticas como pi
 
 # === OPCIÓN PARA ACTIVAR O DESACTIVAR FRICCIÓN ===
-friccion = True # Si es False, las partículas se moverán todas con la misma velocidad (flujo ideal sin fricción)
+friccion = True     # Si es False, las partículas se moverán todas con la misma velocidad (flujo ideal sin fricción)
 
 # === ENTRADA DE DATOS DEL USUARIO ===
 try:
@@ -36,7 +36,7 @@ velocidad_salida_cm_s = velocidad_entrada_cm_s * (radio_entrada_cm / radio_salid
 
 # === CONFIGURACIÓN DE LA VENTANA ===
 pygame.init()
-ancho_pantalla, alto_pantalla = 1400, 800
+ancho_pantalla, alto_pantalla = 1100, 400
 pantalla = pygame.display.set_mode((ancho_pantalla, alto_pantalla))
 pygame.display.set_caption("Simulación de Flujo Laminar (Poiseuille)")
 
@@ -59,6 +59,7 @@ class Particula:
         self.desplazamiento_y = desplazamiento_y_normalizado
         self.y = 0
         self.velocidad = 0
+        self.radio_particula = 4
 
     def actualizar_posicion_y(self, radio_local):
         self.y = y_centro_tubo + self.desplazamiento_y * radio_local
@@ -89,7 +90,7 @@ class Particula:
             self.x = x_tubo
 
     def dibujar(self, pantalla):
-        pygame.draw.line(pantalla, AZUL, (int(self.x), int(self.y)), (int(self.x + 10), int(self.y)), 2)
+        pygame.draw.circle(pantalla, AZUL, (int(self.x), int(self.y)), self.radio_particula)
 
 # === CREACIÓN DE PARTÍCULAS ===
 particulas = []
