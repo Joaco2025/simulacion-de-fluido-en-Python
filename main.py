@@ -1,8 +1,8 @@
 #main.py
 
 # === LIBRERÍAS NECESARIAS ===
-import pygame      # Para gráficos y animación
-import math        # Para usar funciones matemáticas como pi
+import pygame       # Para gráficos y animación
+import math         # Para usar funciones matemáticas como pi
 
 # === ENTRADA DE DATOS DEL USUARIO ===
 # Se piden tres datos físicos importantes para simular el flujo:
@@ -32,8 +32,8 @@ area_entrada_cm2 = math.pi * radio_entrada_cm ** 2
 area_salida_cm2 = math.pi * radio_salida_cm ** 2
 
 # Calculamos el caudal (volumen por segundo) en litros por segundo
-caudal_cm3_s = area_entrada_cm2 * velocidad_entrada_cm_s  # cm³/s
-caudal_lps = caudal_cm3_s / 1000                          # 1000 cm³ = 1 litro
+caudal_cm3_s = area_entrada_cm2 * velocidad_entrada_cm_s    # cm³/s
+caudal_lps = caudal_cm3_s / 1000                            # 1000 cm³ = 1 litro
 
 # Factor visual para que el movimiento sea perceptible en la pantalla
 factor_visual = 100
@@ -59,9 +59,9 @@ AZUL = (50, 50, 255)      # Partículas
 NEGRO = (0, 0, 0)         # Bordes del tubo y texto
 
 # === PARÁMETROS DEL TUBO (posición en pantalla) ===
-x_tubo = 100          # posición horizontal inicial del tubo
-ancho_tubo = 600      # longitud del tubo en píxeles
-y_centro_tubo = 200   # altura del centro del tubo
+x_tubo = 100      # posición horizontal inicial del tubo
+ancho_tubo = 600  # longitud del tubo en píxeles
+y_centro_tubo = 200 # altura del centro del tubo
 
 # === CLASE QUE REPRESENTA UNA PARTÍCULA DE FLUIDO ===
 class Particula:
@@ -70,6 +70,7 @@ class Particula:
         self.desplazamiento_y = desplazamiento_y_normalizado  # valor entre -1 y 1 (posición relativa dentro del radio)
         self.y = 0       # se calculará en función del radio local
         self.velocidad = 0
+        self.radio_particula = 4 # <-- Nuevo: Radio para las "pelotitas"
 
     def actualizar_posicion_y(self, radio_local):
         # Calcula la posición vertical dependiendo del radio en esa parte del tubo
@@ -96,25 +97,25 @@ class Particula:
             self.x = x_tubo
 
     def dibujar(self, pantalla):
-        # Dibuja la partícula como una línea horizontal pequeña
-        pygame.draw.line(pantalla, AZUL, (int(self.x), int(self.y)), (int(self.x + 10), int(self.y)), 2)
+        # Dibuja la partícula como una pequeña "pelotita" (círculo)
+        pygame.draw.circle(pantalla, AZUL, (int(self.x), int(self.y)), self.radio_particula)
 
 
 # === CREACIÓN DE TODAS LAS PARTÍCULAS DEL FLUIDO ===
 # Aquí vamos a generar una serie de partículas que simulan el fluido moviéndose dentro del tubo.
 # Estas partículas estarán distribuidas verticalmente a lo largo del radio del tubo.
 
-particulas = []      # Lista vacía donde se guardarán todas las partículas
+particulas = []       # Lista vacía donde se guardarán todas las partículas
 
-paso = 0.1           # Este valor define qué tan juntas están las partículas entre sí (espaciado vertical)
-                    # Un valor más pequeño crea más partículas y una simulación más suave, pero más lenta.
+paso = 0.1             # Este valor define qué tan juntas están las partículas entre sí (espaciado vertical)
+                       # Un valor más pequeño crea más partículas y una simulación más suave, pero más lenta.
 
-margen = 0.9         # Queremos evitar colocar partículas justo en el borde superior/inferior del tubo,
-                    # porque ahí la velocidad es casi cero y podrían no moverse mucho o salirse visualmente.
+margen = 0.9          # Queremos evitar colocar partículas justo en el borde superior/inferior del tubo,
+                       # porque ahí la velocidad es casi cero y podrían no moverse mucho o salirse visualmente.
 
 # Vamos a generar partículas desde la parte superior del radio (-0.9) hasta la inferior (+0.9)
 # Nota: El rango [-1, 1] representa todo el radio vertical, pero usamos un poco menos por seguridad.
-pos = -margen        # Comenzamos desde la parte superior normalizada
+pos = -margen         # Comenzamos desde la parte superior normalizada
 
 while pos <= margen:
     # Creamos una nueva partícula con ese valor de posición vertical normalizado
@@ -134,7 +135,7 @@ while ejecutando:
 
     # === DIBUJAR LOS BORDES DEL TUBO ===
     puntos_superiores, puntos_inferiores = [], []  # Listas donde guardaremos los puntos para las líneas superior e inferior
-    for dx in range(ancho_tubo + 1):               # Recorremos horizontalmente todo el ancho del tubo, pixel por pixel
+    for dx in range(ancho_tubo + 1):              # Recorremos horizontalmente todo el ancho del tubo, pixel por pixel
         x = x_tubo + dx                            # Coordenada x actual en la pantalla
         progreso = dx / ancho_tubo                 # Progreso (0 a 1) desde la entrada hacia la salida del tubo
 
@@ -154,9 +155,9 @@ while ejecutando:
     pygame.draw.lines(pantalla, NEGRO, False, puntos_inferiores, 2)
 
     # === ACTUALIZAR Y DIBUJAR TODAS LAS PARTÍCULAS ===
-    for p in particulas:                      # Para cada partícula en la lista...
-        dx = p.x - x_tubo                    # Calculamos cuánto ha avanzado horizontalmente desde el inicio del tubo
-        progreso = dx / ancho_tubo           # Convertimos ese avance en un valor normalizado de 0 a 1
+    for p in particulas:                          # Para cada partícula en la lista...
+        dx = p.x - x_tubo                         # Calculamos cuánto ha avanzado horizontalmente desde el inicio del tubo
+        progreso = dx / ancho_tubo                # Convertimos ese avance en un valor normalizado de 0 a 1
         radio_local = radio_entrada_px - (radio_entrada_px - radio_salida_px) * progreso  # Radio en esta posición
 
         # Nos aseguramos que el radio local no sea demasiado pequeño para evitar divisiones por cero
@@ -202,4 +203,3 @@ while ejecutando:
 
 # Cierra Pygame al salir
 pygame.quit()
-
