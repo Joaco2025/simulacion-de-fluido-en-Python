@@ -9,6 +9,8 @@ friccion = True # Si es False, las partículas se moverán todas con la misma ve
 
 # === ENTRADA DE DATOS DEL USUARIO ===
 try:
+    altura_entrada_cm = float(input("Altura a la que se encuentra la entrada (en cm, ej. 0):"))
+    altura_salida_cm = float(input("Altura a la que se encuentra la salida (en cm, ej. 100)"))
     radio_entrada_cm = float(input("Radio de entrada (en cm, ej. 5): "))
     radio_salida_cm = float(input("Radio de salida (en cm, ej. 3): "))
     velocidad_entrada_cm_s = float(input("Velocidad de entrada (en cm/s, ej. 20): "))
