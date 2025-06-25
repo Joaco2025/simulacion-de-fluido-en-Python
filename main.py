@@ -31,7 +31,7 @@ area_salida_cm2 = math.pi * radio_salida_cm ** 2
 caudal_cm3_s = area_entrada_cm2 * velocidad_entrada_cm_s
 caudal_lps = caudal_cm3_s / 1000
 
-factor_visual = 100
+factor_visual = 200
 velocidad_entrada_px = ((velocidad_entrada_cm_s / cm_a_px) / fps) * factor_visual
 
 velocidad_salida_cm_s = velocidad_entrada_cm_s * (radio_entrada_cm / radio_salida_cm) ** 2
