@@ -1,38 +1,23 @@
-#main.py
+import pygame
+import sys
+import math
 
-# === LIBRERÍAS NECESARIAS ===
-import pygame      # Para gráficos y animación
-import math        # Para funciones matemáticas como pi
+friccion = True  # Fricción activada
 
-# === OPCIÓN PARA ACTIVAR O DESACTIVAR FRICCIÓN ===
-friccion = True     # Si es False, las partículas se moverán todas con la misma velocidad (flujo ideal sin fricción)
+# === CONFIGURACIÓN INICIAL ===
+# Valores predefinidos y permitidos
+radios_entrada_cm_lista = [3, 4, 5, 6]
+indice_radio_entrada = 0  # Comienza en 3 cm
 
-# === ENTRADA DE DATOS DEL USUARIO ===
-try:
-    radio_entrada_cm = float(input("Radio de entrada (en cm, ej. 5): "))
-    radio_salida_cm = float(input("Radio de salida (en cm, ej. 3): "))
-    velocidad_entrada_cm_s = float(input("Velocidad de entrada (en cm/s, ej. 20): "))
-except:
-    print("Entrada inválida. Saliendo.")
-    exit()
+radios_salida_cm_lista = [2, 3, 4] # Nuevos valores permitidos para radio de salida
+indice_radio_salida = 1 # Comienza en 3 cm (índice 1 de la lista)
 
-# === CONVERSIÓN DE UNIDADES FÍSICAS A GRÁFICAS ===
+radio_salida_cm = radios_salida_cm_lista[indice_radio_salida] # Inicializa con el valor de la lista
+velocidad_entrada_cm_s = 20
+
 cm_a_px = 10
 fps = 60
-
-radio_entrada_px = radio_entrada_cm * cm_a_px
-radio_salida_px = radio_salida_cm * cm_a_px
-
-area_entrada_cm2 = math.pi * radio_entrada_cm ** 2
-area_salida_cm2 = math.pi * radio_salida_cm ** 2
-
-caudal_cm3_s = area_entrada_cm2 * velocidad_entrada_cm_s
-caudal_lps = caudal_cm3_s / 1000
-
 factor_visual = 100
-velocidad_entrada_px = ((velocidad_entrada_cm_s / cm_a_px) / fps) * factor_visual
-
-velocidad_salida_cm_s = velocidad_entrada_cm_s * (radio_entrada_cm / radio_salida_cm) ** 2
 
 # === CONFIGURACIÓN DE LA VENTANA ===
 pygame.init()
@@ -42,12 +27,21 @@ pygame.display.set_caption("Simulación de Flujo Laminar (Poiseuille)")
 
 fuente = pygame.font.SysFont("Arial", 18)
 
-# === COLORES ===
+# Colores
 BLANCO = (255, 255, 255)
 AZUL = (50, 50, 255)
 NEGRO = (0, 0, 0)
+GRIS = (200, 200, 200)
 
-# === PARÁMETROS DEL TUBO ===
+# Botones - Usando el diccionario directamente
+botones = {
+    "radio_entrada_mas": pygame.Rect(950, 35, 30, 30),
+    "radio_entrada_menos": pygame.Rect(910, 35, 30, 30),
+    "radio_salida_mas": pygame.Rect(950, 65, 30, 30),
+    "radio_salida_menos": pygame.Rect(910, 65, 30, 30),
+}
+
+# Parámetros del tubo
 x_tubo = 100
 ancho_tubo = 600
 y_centro_tubo = 200
@@ -64,26 +58,20 @@ class Particula:
     def actualizar_posicion_y(self, radio_local):
         self.y = y_centro_tubo + self.desplazamiento_y * radio_local
 
-    
     def actualizar_velocidad(self, radio_local):
         if radio_local < 1:
             radio_local = 1
-
         velocidad_maxima_local = velocidad_entrada_px * (radio_entrada_px / radio_local) ** 2
 
         if friccion:
-            perfil_exponente = 2      # curva clásica en forma de parábola
-            minimo_relativo = 0.2     # evita que las partículas más lejanas sean demasiado lentas
-
-            # Calculamos un factor entre 0 (en los bordes) y 1 (en el centro)
+            perfil_exponente = 2
+            minimo_relativo = 0.2
             factor = 1 - abs(self.desplazamiento_y) ** perfil_exponente
-            factor = max(factor, minimo_relativo)  # aseguramos un valor mínimo
-
+            factor = max(factor, minimo_relativo)
             self.velocidad = velocidad_maxima_local * factor
         else:
-            # Si no hay fricción, todas las partículas van a la misma velocidad
             self.velocidad = velocidad_maxima_local
-            
+
     def mover(self):
         self.x += self.velocidad
         if self.x > x_tubo + ancho_tubo:
@@ -93,22 +81,80 @@ class Particula:
         pygame.draw.circle(pantalla, AZUL, (int(self.x), int(self.y)), self.radio_particula)
 
 # === CREACIÓN DE PARTÍCULAS ===
-particulas = []
-paso = 0.02
-margen = 0.9
-pos = -margen
-while pos <= margen:
-    particulas.append(Particula(pos))
-    pos += paso
+# Esta función se asegura de que las partículas se creen con la distribución correcta
+def crear_particulas():
+    nuevas_particulas = []
+    paso = 0.02
+    margen = 0.9
+    pos = -margen
+    while pos <= margen:
+        nuevas_particulas.append(Particula(pos))
+        pos += paso
+    return nuevas_particulas
 
-# === BUCLE PRINCIPAL DE LA SIMULACIÓN ===
+particulas = crear_particulas()
+
+# === FUNCIÓN PARA RECALCULAR PARÁMETROS ===
+def recalcular_parametros():
+    global radio_entrada_cm, radio_salida_cm
+    global radio_entrada_px, radio_salida_px
+    global area_entrada_cm2, area_salida_cm2
+    global caudal_cm3_s, caudal_lps, velocidad_entrada_px, velocidad_salida_cm_s
+    global particulas # Necesitamos reiniciar las partículas si el tubo cambia
+
+    radio_entrada_cm = radios_entrada_cm_lista[indice_radio_entrada]
+    radio_salida_cm = radios_salida_cm_lista[indice_radio_salida] # Actualizar radio_salida_cm
+
+    radio_entrada_px = radio_entrada_cm * cm_a_px
+    radio_salida_px = radio_salida_cm * cm_a_px
+
+    area_entrada_cm2 = math.pi * radio_entrada_cm ** 2
+    area_salida_cm2 = math.pi * radio_salida_cm ** 2
+    caudal_cm3_s = area_entrada_cm2 * velocidad_entrada_cm_s
+    caudal_lps = caudal_cm3_s / 1000
+    velocidad_entrada_px = ((velocidad_entrada_cm_s / cm_a_px) / fps) * factor_visual
+    velocidad_salida_cm_s = velocidad_entrada_cm_s * (radio_entrada_cm / radio_salida_cm) ** 2
+    
+    # Después de recalcular los radios, volvemos a crear las partículas para que se adapten al nuevo tamaño del tubo
+    particulas = crear_particulas()
+
+
+# Cálculo inicial
+recalcular_parametros()
+
+# === BUCLE PRINCIPAL ===
 reloj = pygame.time.Clock()
 ejecutando = True
 
 while ejecutando:
+    for evento in pygame.event.get():
+        if evento.type == pygame.QUIT:
+            ejecutando = False
+        elif evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
+            # === Lógica de botones para Radio de Entrada ===
+            if botones["radio_entrada_mas"].collidepoint(evento.pos):
+                if indice_radio_entrada < len(radios_entrada_cm_lista) - 1:
+                    indice_radio_entrada += 1
+                    recalcular_parametros()
+            elif botones["radio_entrada_menos"].collidepoint(evento.pos):
+                if indice_radio_entrada > 0:
+                    indice_radio_entrada -= 1
+                    recalcular_parametros()
+            
+            # === Lógica de botones para Radio de Salida ===
+            elif botones["radio_salida_mas"].collidepoint(evento.pos):
+                if indice_radio_salida < len(radios_salida_cm_lista) - 1:
+                    indice_radio_salida += 1
+                    recalcular_parametros()
+            elif botones["radio_salida_menos"].collidepoint(evento.pos):
+                if indice_radio_salida > 0:
+                    indice_radio_salida -= 1
+                    recalcular_parametros()
+
+
     pantalla.fill(BLANCO)
 
-    # === DIBUJAR LOS BORDES DEL TUBO ===
+    # Dibujar bordes del tubo
     puntos_superiores, puntos_inferiores = [], []
     for dx in range(ancho_tubo + 1):
         x = x_tubo + dx
@@ -122,7 +168,7 @@ while ejecutando:
     pygame.draw.lines(pantalla, NEGRO, False, puntos_superiores, 2)
     pygame.draw.lines(pantalla, NEGRO, False, puntos_inferiores, 2)
 
-    # === ACTUALIZAR Y DIBUJAR PARTÍCULAS ===
+    # Actualizar y dibujar partículas
     for p in particulas:
         dx = p.x - x_tubo
         progreso = dx / ancho_tubo
@@ -134,9 +180,9 @@ while ejecutando:
         p.mover()
         p.dibujar(pantalla)
 
-    # === MOSTRAR TEXTO INFORMATIVO ===
-    def dibujar_texto(texto, x, y):
-        superficie = fuente.render(texto, True, NEGRO)
+    # Dibujar texto informativo
+    def dibujar_texto(texto, x, y, color=NEGRO):
+        superficie = fuente.render(texto, True, color)
         pantalla.blit(superficie, (x, y))
 
     dibujar_texto(f"Radio entrada: {radio_entrada_cm:.1f} cm", 750, 40)
@@ -147,13 +193,17 @@ while ejecutando:
     dibujar_texto(f"Velocidad salida (centro): {velocidad_salida_cm_s:.1f} cm/s", 750, 170)
     dibujar_texto(f"Caudal estimado: {caudal_lps:.3f} L/s", 750, 200)
     dibujar_texto(f"Fricción: {'Sí' if friccion else 'No'}", 750, 230)
+    
+    # Dibujar todos los botones usando el diccionario
+    for nombre, rect in botones.items():
+        pygame.draw.rect(pantalla, GRIS, rect)
+        if "mas" in nombre:
+            dibujar_texto("+", rect.x + 7, rect.y + 2)
+        elif "menos" in nombre:
+            dibujar_texto("-", rect.x + 9, rect.y + 2)
 
-    for evento in pygame.event.get():
-        if evento.type == pygame.QUIT:
-            ejecutando = False
 
     pygame.display.flip()
     reloj.tick(fps)
 
 pygame.quit()
-
