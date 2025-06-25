@@ -254,7 +254,7 @@ while ejecutando:
     dibujar_texto(f"Para esta simulación, suponemos que el líquido a lo largo de", 400, 530)
     dibujar_texto(f"todo su recorrido se mantiene siendo ese mismo líquido, por", 400, 560)
     dibujar_texto(f"lo cual decimos que ρ₁ = ρ₂ = ρ", 400, 590)
-    dibujar_texto(f"La gravedad se mantiene constante, g=9.8m/s²", 400, 620)
+    dibujar_texto(f"La gravedad se mantiene constante, g=9.8m/s²", 400, 590)
 
 
 
