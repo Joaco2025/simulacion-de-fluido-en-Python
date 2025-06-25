@@ -65,6 +65,9 @@ x_tubo_salida=500
 ancho_tubo_salida=150
 y_centro_tubo_salida=y_centro_tubo-Altura_px
 
+
+inclinacion=0.5
+
 # === CLASE DE PARTÍCULAS ===
 class Particula:
     def __init__(self, desplazamiento_y_normalizado):
@@ -74,8 +77,9 @@ class Particula:
         self.velocidad = 0
         self.radio_particula = 4
 
-    def actualizar_posicion_y(self, radio_local):
-        self.y = y_centro_tubo + self.desplazamiento_y * radio_local
+    def actualizar_posicion_y(self, radio_local, altura_local):
+        self.y = (y_centro_tubo + self.desplazamiento_y * radio_local) - altura_local
+
 
     
     def actualizar_velocidad(self, radio_local):
@@ -96,11 +100,12 @@ class Particula:
         else:
             # Si no hay fricción, todas las partículas van a la misma velocidad
             self.velocidad = velocidad_maxima_local
-            
+
     def mover(self):
         self.x += self.velocidad
-        if self.x > x_tubo + ancho_tubo:
+        if self.x > x_tubo + ancho_total:
             self.x = x_tubo
+            self.y= 1000
 
     def dibujar(self, pantalla):
         pygame.draw.circle(pantalla, AZUL, (int(self.x), int(self.y)), self.radio_particula)
@@ -176,12 +181,22 @@ while ejecutando:
 
     # === ACTUALIZAR Y DIBUJAR PARTÍCULAS ===
     for p in particulas:
-        dx = p.x - x_tubo
-        progreso = dx / ancho_tubo
-        radio_local = radio_entrada_px - (radio_entrada_px - radio_salida_px) * progreso
+        if p.x < x_diagonal:
+            radio_local = radio_entrada_px
+            altura_local = 0
+        elif p.x < x_tubo_salida:
+            progreso = (p.x - x_diagonal) / ancho_diagonal
+            progreso = min(max(progreso, 0), 1)
+            radio_local = radio_entrada_px - (radio_entrada_px - radio_salida_px) * progreso
+            altura_local = Altura_px * progreso
+        else:
+            radio_local = radio_salida_px
+            altura_local = Altura_px
+
         if radio_local < 1:
             radio_local = 1
-        p.actualizar_posicion_y(radio_local)
+
+        p.actualizar_posicion_y(radio_local, altura_local)
         p.actualizar_velocidad(radio_local)
         p.mover()
         p.dibujar(pantalla)
