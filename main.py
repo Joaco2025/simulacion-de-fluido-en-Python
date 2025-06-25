@@ -44,7 +44,7 @@ velocidad_salida_px_frame = ((velocidad_salida_cm_s / cm_a_px) / fps) * factor_v
 
 # === CONFIGURACIÓN DE LA VENTANA ===
 pygame.init()
-ancho_pantalla, alto_pantalla = 1400, 900  # Aumentada para espacio de caída
+ancho_pantalla, alto_pantalla = 1400, 900
 pantalla = pygame.display.set_mode((ancho_pantalla, alto_pantalla))
 pygame.display.set_caption("Simulación de Flujo con Caída Libre")
 
@@ -54,13 +54,12 @@ fuente = pygame.font.SysFont("Arial", 18)
 BLANCO = (255, 255, 255)
 AZUL = (50, 50, 255)
 NEGRO = (0, 0, 0)
-ROJO = (255, 50, 50)
 
 # === PARÁMETROS DEL TUBO ===
 ancho_total = 600
 
 x_tubo = 50
-ancho_tubo = 150 
+ancho_tubo = 150
 y_centro_tubo = 300
 
 x_diagonal = 200
@@ -70,6 +69,9 @@ y_centro_diagonal = 300
 x_tubo_salida = 500
 ancho_tubo_salida = 150
 y_centro_tubo_salida = y_centro_tubo - Altura_px
+
+# === SUELO ===
+y_suelo = y_centro_tubo + radio_entrada_px
 
 # === CLASE DE PARTÍCULAS ===
 class Particula:
@@ -82,11 +84,11 @@ class Particula:
         self.radio_particula = 4
         self.en_caida_libre = False
         self.tiempo_caida = 0
-        
+
     def actualizar_posicion_y(self, radio_local, altura_local):
         if not self.en_caida_libre:
             self.y = (y_centro_tubo + self.desplazamiento_y * radio_local) - altura_local
-    
+
     def actualizar_velocidad(self, radio_local):
         if radio_local < 1:
             radio_local = 1
@@ -110,27 +112,24 @@ class Particula:
 
     def actualizar_caida_libre(self):
         if self.en_caida_libre:
-            self.tiempo_caida += 1/fps
-            # Movimiento horizontal uniforme
+            self.tiempo_caida += 1 / fps
             self.x += self.velocidad_x
-            # Movimiento vertical con aceleración
             self.velocidad_y += gravedad_px_frame2
             self.y += self.velocidad_y
 
     def mover(self):
         if not self.en_caida_libre:
             self.x += self.velocidad_x
-            # Si sale del tubo y hay altura, inicia caída libre
             if self.x > x_tubo_salida + ancho_tubo_salida and Altura_cm > 0:
                 self.iniciar_caida_libre()
             elif self.x > x_tubo + ancho_total:
                 self.resetear()
         else:
             self.actualizar_caida_libre()
-            # Resetear si sale de la pantalla
-            if self.y > alto_pantalla + 100 or self.x > ancho_pantalla + 100:
+            # Reiniciar cuando toca el suelo
+            if self.y >= y_suelo or self.x > ancho_pantalla + 100:
                 self.resetear()
-    
+
     def resetear(self):
         self.x = x_tubo
         self.y = 0
@@ -140,8 +139,7 @@ class Particula:
         self.tiempo_caida = 0
 
     def dibujar(self, pantalla):
-        color = AZUL if self.en_caida_libre else AZUL #ROJO
-        pygame.draw.circle(pantalla, color, (int(self.x), int(self.y)), self.radio_particula)
+        pygame.draw.circle(pantalla, AZUL, (int(self.x), int(self.y)), self.radio_particula)
 
 # === CREACIÓN DE PARTÍCULAS ===
 particulas = []
@@ -152,26 +150,22 @@ while pos <= margen:
     particulas.append(Particula(pos))
     pos += paso
 
-# === BUCLE PRINCIPAL DE LA SIMULACIÓN ===
+# === BUCLE PRINCIPAL ===
 reloj = pygame.time.Clock()
 ejecutando = True
 
-
-# Altura en cm y gravedad en cm/s^2 ya están definidos
 if Altura_cm > 0:
     tiempo_caida_s = math.sqrt((2 * Altura_cm) / gravedad_cm_s2)
     distancia_caida_cm = velocidad_salida_cm_s * tiempo_caida_s
 else:
     distancia_caida_cm = 0
 
-
 while ejecutando:
     pantalla.fill(BLANCO)
 
-    # === DIBUJAR LOS BORDES DEL TUBO ===
+    # === DIBUJAR TUBO ===
     puntos_superiores, puntos_inferiores = [], []
 
-    # Parte horizontal inicial del tubo
     for dx in range(ancho_tubo + 1):
         x = x_tubo + dx
         radio_local = radio_entrada_px
@@ -180,7 +174,6 @@ while ejecutando:
         puntos_superiores.append((x, y_superior))
         puntos_inferiores.append((x, y_inferior))
 
-    # Parte diagonal del tubo
     dy_parts = Altura_px / ancho_diagonal
     dy = 0
     for dx in range(ancho_diagonal):
@@ -193,10 +186,9 @@ while ejecutando:
         puntos_superiores.append((x, y_superior))
         puntos_inferiores.append((x, y_inferior))
 
-    # Parte horizontal final del tubo
     for dx in range(ancho_tubo_salida + 1):
         x = x_tubo_salida + dx
-        radio_local = radio_salida_px 
+        radio_local = radio_salida_px
         y_superior = y_centro_tubo_salida - radio_local
         y_inferior = y_centro_tubo_salida + radio_local
         puntos_superiores.append((x, y_superior))
@@ -206,8 +198,8 @@ while ejecutando:
     pygame.draw.lines(pantalla, NEGRO, False, puntos_inferiores, 2)
 
     # === DIBUJAR SUELO ===
-    #if Altura_cm > 0:
-        #pygame.draw.line(pantalla, NEGRO, (0, y_centro_tubo), (ancho_pantalla, y_centro_tubo), 2)
+    if Altura_cm > 0:
+        pygame.draw.line(pantalla, NEGRO, (0, y_suelo), (ancho_pantalla, y_suelo), 2)
 
     # === ACTUALIZAR Y DIBUJAR PARTÍCULAS ===
     for p in particulas:
@@ -229,7 +221,7 @@ while ejecutando:
 
             p.actualizar_posicion_y(radio_local, altura_local)
             p.actualizar_velocidad(radio_local)
-        
+
         p.mover()
         p.dibujar(pantalla)
 
@@ -249,14 +241,23 @@ while ejecutando:
     dibujar_texto(f"Altura: {Altura_cm:.1f} cm", 10, 620)
     #dibujar_texto(f"Partículas en caída: {sum(1 for p in particulas if p.en_caida_libre)}", 30, 650)
     dibujar_texto("Ecuación de Bernoulli:", 10, 710)
-    dibujar_texto("P₁ + ½·ρ₁·v₁² + ρ·g·h₁ = P₂ + ½·ρ₂·v₂² + ρ·g·h₂", 10, 770)
+    dibujar_texto("P₁ + ½·ρ₁·v₁² + ρ·g·h₁ = P₂ + ½·ρ₂·v₂² + ρ·g·h₂", 5, 770)
     dibujar_texto(f"Distancia horizontal caída libre: {distancia_caida_cm:.1f} cm", 10, 680)
     dibujar_texto(f"Para esta simulación, suponemos que el líquido a lo largo de", 400, 530)
     dibujar_texto(f"todo su recorrido se mantiene siendo ese mismo líquido, por", 400, 560)
     dibujar_texto(f"lo cual decimos que ρ₁ = ρ₂ = ρ", 400, 590)
     dibujar_texto(f"La gravedad se mantiene constante, g=9.8m/s²", 400, 620)
+    dibujar_texto(f"El flujo con el que ingresa el líquido es constante", 400, 650)
+    dibujar_texto(f"La Presión 2 en el punto de salida es igual a la presinó atmosférica", 400, 680)
+    if Altura_cm > 0:
+        dibujar_texto(f"Aquí se considera que el líquido puede tener una caida en forma de", 400, 710)
+        dibujar_texto(f"tiro parabólico, ya que tiene una diferencia de altura con la entrada", 400, 740)
+    else:
+        dibujar_texto(f"Aquí se considera que el líquido sigue fluyendo por el tubo al estar", 400, 710)
+        dibujar_texto(f"a la misma altura o por debajo del punto de entrada", 400, 740)
 
-
+    pygame.display.flip()
+    reloj.tick(fps)
 
     for evento in pygame.event.get():
         if evento.type == pygame.QUIT:
@@ -265,7 +266,5 @@ while ejecutando:
             if evento.key == pygame.K_f:
                 friccion = not friccion
 
-    pygame.display.flip()
-    reloj.tick(fps)
-
 pygame.quit()
+
