@@ -12,6 +12,7 @@ try:
     radio_entrada_cm = float(input("Radio de entrada (en cm, ej. 5): "))
     radio_salida_cm = float(input("Radio de salida (en cm, ej. 3): "))
     velocidad_entrada_cm_s = float(input("Velocidad de entrada (en cm/s, ej. 20): "))
+    Altura_cm = float(input("Diferencia de altura(ne cm, ej. 10): "))
 except:
     print("Entrada inválida. Saliendo.")
     exit()
@@ -25,6 +26,8 @@ radio_salida_px = radio_salida_cm * cm_a_px
 
 area_entrada_cm2 = math.pi * radio_entrada_cm ** 2
 area_salida_cm2 = math.pi * radio_salida_cm ** 2
+
+Altura_px= Altura_cm * cm_a_px
 
 caudal_cm3_s = area_entrada_cm2 * velocidad_entrada_cm_s
 caudal_lps = caudal_cm3_s / 1000
@@ -48,9 +51,19 @@ AZUL = (50, 50, 255)
 NEGRO = (0, 0, 0)
 
 # === PARÁMETROS DEL TUBO ===
-x_tubo = 100
-ancho_tubo = 600
-y_centro_tubo = 200
+ancho_total=600
+
+x_tubo = 50
+ancho_tubo = 150 
+y_centro_tubo = 300
+
+x_diagonal=200
+ancho_diagonal=300
+y_centro_diagonal=300
+
+x_tubo_salida=500
+ancho_tubo_salida=150
+y_centro_tubo_salida=y_centro_tubo-Altura_px
 
 # === CLASE DE PARTÍCULAS ===
 class Particula:
@@ -108,19 +121,58 @@ ejecutando = True
 while ejecutando:
     pantalla.fill(BLANCO)
 
-    # === DIBUJAR LOS BORDES DEL TUBO ===
+        # === DIBUJAR LOS BORDES DEL TUBO ===
     puntos_superiores, puntos_inferiores = [], []
+
+    #parte 1 para la primera area
+
     for dx in range(ancho_tubo + 1):
         x = x_tubo + dx
-        progreso = dx / ancho_tubo
-        radio_local = radio_entrada_px - (radio_entrada_px - radio_salida_px) * progreso
+        #radio_local = radio_entrada_px - (radio_entrada_px - radio_salida_px) * progreso //guardado para la diagonal
+        radio_local = radio_entrada_px
         y_superior = y_centro_tubo - radio_local
         y_inferior = y_centro_tubo + radio_local
         puntos_superiores.append((x, y_superior))
         puntos_inferiores.append((x, y_inferior))
 
+    dy_parts=Altura_px/ancho_diagonal
+    dy=0
+    for dx in range(ancho_diagonal):
+        x=x_diagonal+dx
+        progreso = dx / ancho_diagonal
+        radio_local = radio_entrada_px - (radio_entrada_px - radio_salida_px) * progreso
+        y_superior = (y_centro_tubo - radio_local)-dy
+        y_inferior = (y_centro_tubo + radio_local)-dy
+        dy=dy+dy_parts
+        puntos_superiores.append((x, y_superior))
+        puntos_inferiores.append((x, y_inferior))
+
+    for dx in range (ancho_tubo_salida+1):
+        x = x_tubo_salida + dx
+        #radio_local = radio_entrada_px - (radio_entrada_px - radio_salida_px) * progreso //guardado para la diagonal
+        radio_local = radio_salida_px 
+        y_superior = y_centro_tubo_salida - radio_local
+        y_inferior = y_centro_tubo_salida + radio_local
+        puntos_superiores.append((x, y_superior))
+        puntos_inferiores.append((x, y_inferior))
+
     pygame.draw.lines(pantalla, NEGRO, False, puntos_superiores, 2)
     pygame.draw.lines(pantalla, NEGRO, False, puntos_inferiores, 2)
+    # print(puntos_superiores)
+    # print(puntos_inferiores)
+
+    #     #prueba comienzo del tubo Area 1 
+    # pygame.draw.line(pantalla, NEGRO, (x_tubo,y_centro_tubo-radio_entrada_px), (x_tubo+ancho_tubo,y_centro_tubo-radio_entrada_px))
+    # pygame.draw.line(pantalla, NEGRO, (x_tubo,y_centro_tubo+radio_entrada_px), (x_tubo+ancho_tubo,y_centro_tubo+radio_entrada_px))
+
+    #      #prueba area diagonal
+    # pygame.draw.line(pantalla, NEGRO, (x_diagonal,y_centro_tubo-radio_entrada_px), (x_diagonal+ancho_diagonal,(y_centro_tubo-radio_salida_px)-Altura_px))
+    # pygame.draw.line(pantalla, NEGRO, (x_diagonal,y_centro_tubo+radio_entrada_px), (x_diagonal+ancho_diagonal,(y_centro_tubo+radio_salida_px)-Altura_px))
+
+    #     #prueba final del tubo Area 2
+    # pygame.draw.line(pantalla, NEGRO, (x_tubo_salida,y_centro_tubo_salida-radio_salida_px), (x_tubo_salida+ancho_tubo_salida,y_centro_tubo_salida-radio_salida_px))
+    # pygame.draw.line(pantalla, NEGRO, (x_tubo_salida,y_centro_tubo_salida+radio_salida_px), (x_tubo_salida+ancho_tubo_salida,y_centro_tubo_salida+radio_salida_px))
+
 
     # === ACTUALIZAR Y DIBUJAR PARTÍCULAS ===
     for p in particulas:
@@ -147,6 +199,7 @@ while ejecutando:
     dibujar_texto(f"Velocidad salida (centro): {velocidad_salida_cm_s:.1f} cm/s", 750, 170)
     dibujar_texto(f"Caudal estimado: {caudal_lps:.3f} L/s", 750, 200)
     dibujar_texto(f"Fricción: {'Sí' if friccion else 'No'}", 750, 230)
+    dibujar_texto(f"Altura: {Altura_cm:.1f} cm", 750, 260)
 
     for evento in pygame.event.get():
         if evento.type == pygame.QUIT:
